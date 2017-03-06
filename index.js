@@ -16,6 +16,25 @@ var ondrain = (self, err) => {
   if (_ondrain) _ondrain(err)
 }
 
+var isFn = (fn) => {
+  return typeof fn === 'function'
+}
+
+var isFS = (stream) => {
+  if (!fs) return false // browser
+  return (stream instanceof (fs.ReadStream || noop) || stream instanceof (fs.WriteStream || noop)) && isFn(stream.close)
+}
+
+var isRequest = (stream) => {
+  return stream.setHeader && isFn(stream.abort)
+}
+
+var destroy = (stream) => {
+  if (isFS(stream)) return stream.close() // use close for fs streams to avoid fd leaks
+  if (isRequest(stream)) return stream.abort() // request.destroy just do .end - .abort is what we want
+  if (isFn(stream.destroy)) return stream.destroy()
+}
+
 var end = (ws, cb) => {
   if (!ws) return cb()
   if (ws._writableState && ws._writableState.finished) return cb()
@@ -64,7 +83,7 @@ Writify.prototype.destroy = (err) => {
     ondrain(this, err)
     this.emit('error', err)
   }
-  if (this._ws) this._ws.destroy()
+  if (this._ws) destroy(this._ws)
   this.emit('close')
 }
 
