@@ -103,9 +103,11 @@ Writify.prototype._write = (data, enc, cb) => {
 }
 
 Writify.prototype._finish = (cb) => {
+  this.emit('preend')
   onuncork(this, () => {
     end(this._ws, () => {
       onuncork(this, () => {
+        self.emit('prefinish')
         this._flush(cb)
       })
     })
