@@ -2,8 +2,12 @@
 
 var eos = require('end-of-stream')
 var util = require('util')
+var fs = require('fs')
+var stream = require('stream')
 
 var SIGNAL_FLUSH = new Buffer([0])
+
+var noop = () => true
 
 var onuncork = (self, fn) => {
   if (self._corked) self.once('uncork', fn)
@@ -21,7 +25,6 @@ var isFn = (fn) => {
 }
 
 var isFS = (stream) => {
-  if (!fs) return false // browser
   return (stream instanceof (fs.ReadStream || noop) || stream instanceof (fs.WriteStream || noop)) && isFn(stream.close)
 }
 
@@ -68,7 +71,7 @@ Writify.obj = (init, flush, opts) => {
 Writify.prototype._setup = (data, enc, cb) => {
   this._init((err, ws) => {
     if (err) return cb(err)
-    if (this.destroyed) return cb(new Error('stream destroyed')) // TODO destroy ws if exists
+    if (this.destroyed) return destroy(ws)
     this._ws = ws
     ws.on('drain', () => ondrain(this))
     eos(ws, (err) => this.destroy(err))
@@ -87,11 +90,11 @@ Writify.prototype.destroy = (err) => {
   this.emit('close')
 }
 
-Writify.prototype.cork = function() {
+Writify.prototype.cork = () => {
   if (++this._corked === 1) this.emit('cork')
 }
 
-Writify.prototype.uncork = function() {
+Writify.prototype.uncork = () => {
   if (this._corked && --this._corked === 0) this.emit('uncork')
 }
 
@@ -107,7 +110,7 @@ Writify.prototype._finish = (cb) => {
   onuncork(this, () => {
     end(this._ws, () => {
       onuncork(this, () => {
-        self.emit('prefinish')
+        this.emit('prefinish')
         this._flush(cb)
       })
     })
