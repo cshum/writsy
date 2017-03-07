@@ -6,25 +6,24 @@ var from = require('from2')
 var concat = require('concat-stream')
 var pump = require('pump')
 
-test('writify wrap stream', (t) => {
-  t.plan(3)
-  var writer = writify((cb) => cb(null, concat((buf) => {
-    t.ok(buf instanceof Buffer)
-    t.equal(buf.toString(), 'abc')
-  })))
-  pump(from(['a', 'b', 'c']), writer, (err) => {
-    t.error(err)
-  })
-})
+test('writify wrap function, callback and stream', (t) => {
+  t.plan(7)
 
-test('writify wrap object stream', (t) => {
-  t.plan(2)
-  var writer = writify.obj((cb) => cb(null, concat({encoding: 'objects'}, (arr) => {
-    t.deepEqual(arr, [1, 2, 3])
-  })))
-  pump(from.obj([1, 2, 3]), writer, (err) => {
-    t.error(err)
-  })
+  pump(from(['a', 'b', 'c']), writify(() => concat((buf) => {
+    t.equal(buf.toString(), 'abc', 'wrap function')
+  })), t.error)
+
+  pump(from(['a', 'b', 'c']), writify((cb) => {
+    process.nextTick(() => cb(null, concat((buf) => {
+      t.equal(buf.toString(), 'abc', 'wrao callback')
+    })))
+  }), t.error)
+
+  pump(from(['a', 'b', 'c']), writify(concat((buf) => {
+    t.equal(buf.toString(), 'abc', 'wrao stream')
+  })), t.error)
+
+  t.throws(() => writify(true), 'writer must be a stream or function')
 })
 
 test('writify flush success', (t) => {

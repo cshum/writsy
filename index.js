@@ -9,6 +9,8 @@ var SIGNAL_FLUSH = new Buffer([0])
 
 var isFn = (fn) => typeof fn === 'function'
 
+var isStream = (stream) => stream && typeof stream === 'object' && isFn(stream.pipe)
+
 var isFS = (stream) => fs && (stream instanceof fs.ReadStream || stream instanceof fs.WriteStream) && isFn(stream.close)
 
 var isRequest = (stream) => stream.setHeader && isFn(stream.abort)
@@ -38,12 +40,19 @@ var end = (ws, cb) => {
   cb()
 }
 
-function Writify (init, flush, opts) {
-  if (!(this instanceof Writify)) return new Writify(init, flush, opts)
+function Writify (writer, flush, opts) {
+  if (!(this instanceof Writify)) return new Writify(writer, flush, opts)
   this.destroyed = false
 
-  this._ws = null
-  this._init = init
+  if (isFn(writer)) {
+    this._writer = writer
+    this._ws = null
+  } else if (isStream(writer)) {
+    this._writer = null
+    this._ws = writer
+  } else {
+    throw new Error('writer must be a stream or function')
+  }
   this._flush = flush || ((cb) => cb())
   this._corked = 0
   this._ondrain = null
@@ -61,15 +70,21 @@ Writify.obj = function (init, flush, opts) {
   return new Writify(init, flush, opts)
 }
 
+Writify.prototype._init = function () {
+  if (this.destroyed) return destroy(this._ws)
+  this._ws.on('drain', () => ondrain(this))
+  eos(this._ws, (err) => this.destroy(err))
+}
+
 Writify.prototype._setup = function (data, enc, cb) {
-  this._init((err, ws) => {
+  var next = (err, ws) => {
     if (err) return cb(err)
-    if (this.destroyed) return destroy(ws)
     this._ws = ws
-    ws.on('drain', () => ondrain(this))
-    eos(ws, (err) => this.destroy(err))
+    this._init()
     this._write(data, enc, cb)
-  })
+  }
+  var ws = this._writer(next)
+  if (isStream(ws)) next(null, ws)
 }
 
 Writify.prototype.destroy = function (err) {
