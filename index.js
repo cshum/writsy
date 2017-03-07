@@ -7,7 +7,11 @@ var stream = require('stream')
 
 var SIGNAL_FLUSH = new Buffer([0])
 
-var noop = () => true
+var isFn = (fn) => typeof fn === 'function'
+
+var isFS = (stream) => fs && (stream instanceof fs.ReadStream || stream instanceof fs.WriteStream) && isFn(stream.close)
+
+var isRequest = (stream) => stream.setHeader && isFn(stream.abort)
 
 var onuncork = (self, fn) => {
   if (self._corked) self.once('uncork', fn)
@@ -20,21 +24,9 @@ var ondrain = (self, err) => {
   if (_ondrain) _ondrain(err)
 }
 
-var isFn = (fn) => {
-  return typeof fn === 'function'
-}
-
-var isFS = (stream) => {
-  return (stream instanceof (fs.ReadStream || noop) || stream instanceof (fs.WriteStream || noop)) && isFn(stream.close)
-}
-
-var isRequest = (stream) => {
-  return stream.setHeader && isFn(stream.abort)
-}
-
-var destroy = (stream) => {
-  if (isFS(stream)) return stream.close() // use close for fs streams to avoid fd leaks
-  if (isRequest(stream)) return stream.abort() // request.destroy just do .end - .abort is what we want
+var destroy = (stream) => { // from pump destoryer
+  if (isFS(stream)) return stream.close()
+  if (isRequest(stream)) return stream.abort()
   if (isFn(stream.destroy)) return stream.destroy()
 }
 
@@ -62,7 +54,7 @@ function Writify (init, flush, opts) {
 
 util.inherits(Writify, stream.Writable)
 
-Writify.obj = (init, flush, opts) => {
+Writify.obj = function (init, flush, opts) {
   if (!opts) opts = {}
   opts.objectMode = true
   opts.highWaterMark = 16
