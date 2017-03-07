@@ -1,6 +1,6 @@
 {
   "name": "writify",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Write stream constructor that supports async initialization and flush function",
   "scripts": {
     "test": "standard && node test.js"
