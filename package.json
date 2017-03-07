@@ -1,7 +1,7 @@
 {
   "name": "writify",
-  "version": "0.0.1",
-  "description": "",
+  "version": "0.1.0",
+  "description": "Write stream constructor that supports async initialization and flush function",
   "scripts": {
     "test": "standard && node test.js"
   },
@@ -14,11 +14,11 @@
   "devDependencies": {
     "concat-stream": "^1.6.0",
     "from2": "^2.3.0",
-    "pump": "^1.0.2",
-    "standard": "^6.0.8",
-    "tape": "^3.0.2"
+    "pump": "^1.0.2"
   },
   "dependencies": {
-    "end-of-stream": "^1.1.0"
+    "end-of-stream": "^1.1.0",
+    "standard": "^9.0.0",
+    "tape": "^4.6.3"
   }
 }
