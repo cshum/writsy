@@ -50,6 +50,7 @@ function Writify (writer, flush, opts) {
   } else if (isStream(writer)) {
     this._writer = null
     this._ws = writer
+    this._init()
   } else {
     throw new Error('writer must be a stream or function')
   }
