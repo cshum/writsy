@@ -111,7 +111,9 @@ Writify.prototype._write = function (data, enc, cb) {
   if (!this._ws) return this._setup(data, enc, cb)
   if (this._corked) return onuncork(this, () => this._write(data, enc, cb))
   if (data === SIGNAL_FLUSH) return this._finish(cb)
-  this._ws.write(data, enc, cb)
+
+  if (this._ws.write(data) === false) this._ondrain = cb
+  else cb()
 }
 
 Writify.prototype._finish = function (cb) {
