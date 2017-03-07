@@ -83,8 +83,8 @@ test('wrifity init error', (t) => {
   })
 })
 
-test('cork', (t) => {
-  t.plan(1)
+test('cork write', (t) => {
+  t.plan(2)
   var ws = writify((cb) => cb(null, concat()))
   var ok = false
   pump(from(['a', 'b', 'c']), ws, (err) => {
@@ -96,4 +96,35 @@ test('cork', (t) => {
     ok = true
     ws.uncork()
   }, 100)
+})
+
+test('cork preend prefinish flush', (t) => {
+  t.plan(4)
+  var preend = false
+  var prefinish = false
+  var flushed = false
+  var ws = writify((cb) => cb(null, concat()))
+  pump(from(['a', 'b', 'c']), ws, (err) => {
+    t.ok(flushed, 'flushed')
+    t.error(err)
+  })
+  ws.on('preend', () => {
+    ws.cork()
+    setTimeout(() => {
+      preend = true
+      ws.uncork()
+    }, 100)
+  })
+  ws.on('prefinish', () => {
+    ws.cork()
+    setTimeout(() => {
+      t.ok(preend, 'preend')
+      prefinish = true
+      ws.uncork()
+    }, 100)
+  })
+  ws.on('flush', () => {
+    t.ok(prefinish, 'prefinish')
+    flushed = true
+  })
 })

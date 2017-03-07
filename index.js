@@ -107,9 +107,14 @@ Writify.prototype._write = function (data, enc, cb) {
 }
 
 Writify.prototype._finish = function (cb) {
+  this.emit('preend')
   onuncork(this, () => {
     end(this._ws, () => {
+      // do not emit prefinish twice
+      if (this._writableState.prefinished === false) this._writableState.prefinished = true
+      this.emit('prefinish')
       onuncork(this, () => {
+        this.emit('flush')
         this._flush(cb)
       })
     })
