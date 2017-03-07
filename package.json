@@ -12,6 +12,9 @@
   "author": "Adrian C Shum <adrian@cshum.com>",
   "license": "MIT",
   "devDependencies": {
+    "concat-stream": "^1.6.0",
+    "from2": "^2.3.0",
+    "pump": "^1.0.2",
     "standard": "^6.0.8",
     "tape": "^3.0.2"
   },

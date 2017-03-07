@@ -47,6 +47,7 @@ var end = (ws, cb) => {
 }
 
 function Writify (init, flush, opts) {
+  if (!(this instanceof Writify)) return new Writify(init, flush, opts)
   this.destroyed = false
 
   this._ws = null
@@ -68,7 +69,7 @@ Writify.obj = (init, flush, opts) => {
   return new Writify(init, flush, opts)
 }
 
-Writify.prototype._setup = (data, enc, cb) => {
+Writify.prototype._setup = function (data, enc, cb) {
   this._init((err, ws) => {
     if (err) return cb(err)
     if (this.destroyed) return destroy(ws)
@@ -79,7 +80,7 @@ Writify.prototype._setup = (data, enc, cb) => {
   })
 }
 
-Writify.prototype.destroy = (err) => {
+Writify.prototype.destroy = function (err) {
   if (this.destroyed) return
   this.destroyed = true
   if (err) {
@@ -90,22 +91,22 @@ Writify.prototype.destroy = (err) => {
   this.emit('close')
 }
 
-Writify.prototype.cork = () => {
+Writify.prototype.cork = function () {
   if (++this._corked === 1) this.emit('cork')
 }
 
-Writify.prototype.uncork = () => {
+Writify.prototype.uncork = function () {
   if (this._corked && --this._corked === 0) this.emit('uncork')
 }
 
-Writify.prototype._write = (data, enc, cb) => {
+Writify.prototype._write = function (data, enc, cb) {
   if (!this._ws) return this._setup(data, enc, cb)
   if (this._corked) return onuncork(this, () => this._write(data, end, cb))
   if (data === SIGNAL_FLUSH) return this._finish(cb)
   this._ws.write(data, enc, cb)
 }
 
-Writify.prototype._finish = (cb) => {
+Writify.prototype._finish = function (cb) {
   this.emit('preend')
   onuncork(this, () => {
     end(this._ws, () => {
@@ -117,7 +118,7 @@ Writify.prototype._finish = (cb) => {
   })
 }
 
-Writify.prototype.end = (data, enc, cb) => {
+Writify.prototype.end = function (data, enc, cb) {
   if (typeof data === 'function') return this.end(null, null, data)
   if (typeof enc === 'function') return this.end(data, null, enc)
   this._ended = true
