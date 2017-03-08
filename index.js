@@ -55,10 +55,16 @@ function Writify (init, flush, opts) {
     this.uncork()
   }
 
-  this._flush = flush || ((cb) => cb())
+  if (isFn(flush)) {
+    this._flush = flush
+  } else {
+    opts = flush
+    this._flush = null
+  }
   this._corked = 1 // corked on init
   this._ondrain = null
   this._drained = false
+
   if (isFn(init)) {
     var ws = init(ready)
     if (isStream(ws)) ready(null, ws)
@@ -114,6 +120,7 @@ Writify.prototype._finish = function (cb) {
       if (this._writableState.prefinished === false) this._writableState.prefinished = true
       this.emit('prefinish')
       onuncork(this, () => {
+        if (!this._flush) return cb()
         this.emit('flush')
         this._flush(cb)
       })
@@ -122,8 +129,8 @@ Writify.prototype._finish = function (cb) {
 }
 
 Writify.prototype.end = function (data, enc, cb) {
-  if (typeof data === 'function') return this.end(null, null, data)
-  if (typeof enc === 'function') return this.end(data, null, enc)
+  if (isFn(data)) return this.end(null, null, data)
+  if (isFn(enc)) return this.end(data, null, enc)
   this._ended = true
   if (data) this.write(data)
   this.write(SIGNAL_FLUSH)

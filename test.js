@@ -102,7 +102,7 @@ test('cork preend prefinish flush', (t) => {
   var preend = false
   var prefinish = false
   var flushed = false
-  var ws = writify((cb) => cb(null, concat()))
+  var ws = writify((cb) => cb(null, concat()), (cb) => cb())
   pump(from(['a', 'b', 'c']), ws, (err) => {
     t.ok(flushed, 'flushed')
     t.error(err)
