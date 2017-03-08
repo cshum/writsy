@@ -1,6 +1,6 @@
 # writify
 
-Write stream constructor that supports async initialization and flush function.
+Write stream wrapper that supports async initialization and flush function.
 
 [![Build Status](https://travis-ci.org/cshum/writify.svg?branch=master)](https://travis-ci.org/cshum/writify)
 
@@ -8,7 +8,7 @@ Write stream constructor that supports async initialization and flush function.
 npm install writify
 ```
 
-### `var ws = writify(writer, [flush])`
+### `var ws = writify(init, [flush])`
 
 ```js
 var writify = require('writify')
