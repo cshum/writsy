@@ -40,26 +40,33 @@ var end = (ws, cb) => {
   cb()
 }
 
-function Writify (writer, flush, opts) {
-  if (!(this instanceof Writify)) return new Writify(writer, flush, opts)
+function Writify (init, flush, opts) {
+  if (!(this instanceof Writify)) return new Writify(init, flush, opts)
+  stream.Writable.call(this, opts)
   this.destroyed = false
 
-  if (isFn(writer)) {
-    this._writer = writer
-    this._ws = null
-  } else if (isStream(writer)) {
-    this._writer = null
-    this._ws = writer
-    this._init()
-  } else {
-    throw new Error('writer must be a stream or function')
+  var ready = (err, ws) => {
+    this._ws = ws
+    if (err) return this.destroy(err)
+    if (this.destroyed) return destroy(this._ws)
+    if (!this._ws) return
+    this._ws.on('drain', () => ondrain(this))
+    eos(this._ws, (err) => this.destroy(err))
+    this.uncork()
   }
+
   this._flush = flush || ((cb) => cb())
-  this._corked = 0
+  this._corked = 1 // corked on init
   this._ondrain = null
   this._drained = false
-
-  stream.Writable.call(this, opts)
+  if (isFn(init)) {
+    var ws = init(ready)
+    if (isStream(ws)) ready(null, ws)
+  } else if (isStream(init)) {
+    ready(null, init)
+  } else {
+    throw new Error('init must be a stream or function')
+  }
 }
 
 util.inherits(Writify, stream.Writable)
@@ -69,23 +76,6 @@ Writify.obj = function (init, flush, opts) {
   opts.objectMode = true
   opts.highWaterMark = 16
   return new Writify(init, flush, opts)
-}
-
-Writify.prototype._init = function () {
-  if (this.destroyed) return destroy(this._ws)
-  this._ws.on('drain', () => ondrain(this))
-  eos(this._ws, (err) => this.destroy(err))
-}
-
-Writify.prototype._setup = function (data, enc, cb) {
-  var next = (err, ws) => {
-    if (err) return cb(err)
-    this._ws = ws
-    this._init()
-    this._write(data, enc, cb)
-  }
-  var ws = this._writer(next)
-  if (isStream(ws)) next(null, ws)
 }
 
 Writify.prototype.destroy = function (err) {
@@ -108,8 +98,8 @@ Writify.prototype.uncork = function () {
 }
 
 Writify.prototype._write = function (data, enc, cb) {
-  if (!this._ws) return this._setup(data, enc, cb)
   if (this._corked) return onuncork(this, () => this._write(data, enc, cb))
+  if (!this._ws) return cb(new Error('Write stream not exists'))
   if (data === SIGNAL_FLUSH) return this._finish(cb)
 
   if (this._ws.write(data) === false) this._ondrain = cb
