@@ -8,24 +8,28 @@ Write stream wrapper that supports async initialization and flush function.
 npm install writify
 ```
 
-### `var ws = writify(init, [flush])`
+#### `var ws = writify(init, [flush], [opts])`
+#### `var ws = writify.obj(init, [flush], [opts])`
+
+Wraps a new writable stream (or object stream) by passing `init` callback function.
+Supports optional `flush` function that is called before 'finish' emitted.
 
 ```js
 var writify = require('writify')
 ...
 
-var writeStream = writify((cb) => {
+var ws = writify((cb) => {
   // async initialization, error handling
-  mkdirp('/tmp/f/o/o', (err) => {
+  mkdirp('/tmp/foo/', (err) => {
     if (err) return cb(err)
-    cb(null, fs.createWriteStream('/tmp/f/o/o/bar.txt'))
+    cb(null, fs.createWriteStream('/tmp/foo/bar.txt'))
   })
 }, (cb) => {
-  // call before writeStream finish
-  fs.rename('/tmp/f/o/o/bar.txt', 'dest.txt', cb)
+  // flush before finish
+  fs.rename('/tmp/foo/bar.txt', './dest.txt', cb)
 })
 
-fs.createReadStream('loremipsum.txt').pipe(writeStream)
+fs.createReadStream('loremipsum.txt').pipe(ws)
 
 ```
 
