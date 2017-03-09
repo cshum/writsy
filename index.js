@@ -87,12 +87,14 @@ Writsy.obj = function (init, flush, opts) {
 Writsy.prototype.destroy = function (err) {
   if (this.destroyed) return
   this.destroyed = true
-  if (err) {
-    ondrain(this, err)
-    this.emit('error', err)
-  }
-  if (this._ws) destroy(this._ws)
-  this.emit('close')
+  process.nextTick(() => {
+    if (err) {
+      ondrain(this, err)
+      this.emit('error', err)
+    }
+    if (this._ws) destroy(this._ws)
+    this.emit('close')
+  })
 }
 
 Writsy.prototype.cork = function () {
