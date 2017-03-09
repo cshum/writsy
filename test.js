@@ -1,35 +1,35 @@
 'use strict'
 
-var writify = require('./')
+var writsy = require('./')
 var test = require('tape')
 var from = require('from2')
 var concat = require('concat-stream')
 var pump = require('pump')
 
-test('writify wrap function, callback and stream', (t) => {
+test('writsy wrap function, callback and stream', (t) => {
   t.plan(7)
 
-  pump(from(['a', 'b', 'c']), writify(() => concat((buf) => {
+  pump(from(['a', 'b', 'c']), writsy(() => concat((buf) => {
     t.equal(buf.toString(), 'abc', 'wrap function')
   })), t.error)
 
-  pump(from(['a', 'b', 'c']), writify((cb) => {
+  pump(from(['a', 'b', 'c']), writsy((cb) => {
     process.nextTick(() => cb(null, concat((buf) => {
       t.equal(buf.toString(), 'abc', 'wrao callback')
     })))
   }), t.error)
 
-  pump(from(['a', 'b', 'c']), writify(concat((buf) => {
+  pump(from(['a', 'b', 'c']), writsy(concat((buf) => {
     t.equal(buf.toString(), 'abc', 'wrao stream')
   })), t.error)
 
-  t.throws(() => writify(true), 'writer must be a stream or function')
+  t.throws(() => writsy(true), 'writer must be a stream or function')
 })
 
-test('writify flush success', (t) => {
+test('writsy flush success', (t) => {
   t.plan(4)
   var flushed = false
-  var writer = writify.obj((cb) => {
+  var writer = writsy.obj((cb) => {
     process.nextTick(() => {
       cb(null, concat({encoding: 'objects'}, (arr) => {
         t.notOk(flushed, 'not flushed on inner stream end')
@@ -48,10 +48,10 @@ test('writify flush success', (t) => {
   })
 })
 
-test('writify flush error', (t) => {
+test('writsy flush error', (t) => {
   t.plan(3)
   var inner
-  var writer = writify.obj((cb) => {
+  var writer = writsy.obj((cb) => {
     process.nextTick(() => {
       inner = concat({encoding: 'objects'}, (arr) => {
         t.deepEqual(arr, [1, 2, 3])
@@ -71,7 +71,7 @@ test('writify flush error', (t) => {
 
 test('wrifity init error', (t) => {
   t.plan(2)
-  var writer = writify.obj((cb) => {
+  var writer = writsy.obj((cb) => {
     process.nextTick(() => cb(new Error('init error')))
   }, (cb) => {
     t.fail('should not flush on init error')
@@ -84,7 +84,7 @@ test('wrifity init error', (t) => {
 
 test('cork write', (t) => {
   t.plan(2)
-  var ws = writify((cb) => cb(null, concat()))
+  var ws = writsy((cb) => cb(null, concat()))
   var ok = false
   pump(from(['a', 'b', 'c']), ws, (err) => {
     t.error(err)
@@ -102,7 +102,7 @@ test('cork preend prefinish flush', (t) => {
   var preend = false
   var prefinish = false
   var flushed = false
-  var ws = writify((cb) => cb(null, concat()), (cb) => cb())
+  var ws = writsy((cb) => cb(null, concat()), (cb) => cb())
   pump(from(['a', 'b', 'c']), ws, (err) => {
     t.ok(flushed, 'flushed')
     t.error(err)

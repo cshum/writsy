@@ -1,24 +1,24 @@
-# writify
+# writsy
 
 Write stream wrapper that supports async initialization and flush function.
 
-[![Build Status](https://travis-ci.org/cshum/writify.svg?branch=master)](https://travis-ci.org/cshum/writify)
+[![Build Status](https://travis-ci.org/cshum/writsy.svg?branch=master)](https://travis-ci.org/cshum/writsy)
 
 ```
-npm install writify
+npm install writsy
 ```
 
-#### `var ws = writify(init, [flush], [opts])`
-#### `var ws = writify.obj(init, [flush], [opts])`
+#### `var ws = writsy(init, [flush], [opts])`
+#### `var ws = writsy.obj(init, [flush], [opts])`
 
 Wraps a new writable stream (or object stream) by passing `init` callback function.
 Supports optional `flush` function that is called before 'finish' emitted.
 
 ```js
-var writify = require('writify')
+var writsy = require('writsy')
 ...
 
-var ws = writify((cb) => {
+var ws = writsy((cb) => {
   // async initialization, error handling
   mkdirp('/tmp/foo/', (err) => {
     if (err) return cb(err)

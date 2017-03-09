@@ -40,8 +40,8 @@ var end = (ws, cb) => {
   cb()
 }
 
-function Writify (init, flush, opts) {
-  if (!(this instanceof Writify)) return new Writify(init, flush, opts)
+function Writsy (init, flush, opts) {
+  if (!(this instanceof Writsy)) return new Writsy(init, flush, opts)
   stream.Writable.call(this, opts)
   this.destroyed = false
 
@@ -75,16 +75,16 @@ function Writify (init, flush, opts) {
   }
 }
 
-util.inherits(Writify, stream.Writable)
+util.inherits(Writsy, stream.Writable)
 
-Writify.obj = function (init, flush, opts) {
+Writsy.obj = function (init, flush, opts) {
   if (!opts) opts = {}
   opts.objectMode = true
   opts.highWaterMark = 16
-  return new Writify(init, flush, opts)
+  return new Writsy(init, flush, opts)
 }
 
-Writify.prototype.destroy = function (err) {
+Writsy.prototype.destroy = function (err) {
   if (this.destroyed) return
   this.destroyed = true
   if (err) {
@@ -95,15 +95,15 @@ Writify.prototype.destroy = function (err) {
   this.emit('close')
 }
 
-Writify.prototype.cork = function () {
+Writsy.prototype.cork = function () {
   if (++this._corked === 1) this.emit('cork')
 }
 
-Writify.prototype.uncork = function () {
+Writsy.prototype.uncork = function () {
   if (this._corked && --this._corked === 0) this.emit('uncork')
 }
 
-Writify.prototype._write = function (data, enc, cb) {
+Writsy.prototype._write = function (data, enc, cb) {
   if (this._corked) return onuncork(this, () => this._write(data, enc, cb))
   if (!this._ws) return cb(new Error('Write stream not exists'))
   if (data === SIGNAL_FLUSH) return this._finish(cb)
@@ -112,7 +112,7 @@ Writify.prototype._write = function (data, enc, cb) {
   else cb()
 }
 
-Writify.prototype._finish = function (cb) {
+Writsy.prototype._finish = function (cb) {
   this.emit('preend')
   onuncork(this, () => {
     end(this._ws, () => {
@@ -128,7 +128,7 @@ Writify.prototype._finish = function (cb) {
   })
 }
 
-Writify.prototype.end = function (data, enc, cb) {
+Writsy.prototype.end = function (data, enc, cb) {
   if (isFn(data)) return this.end(null, null, data)
   if (isFn(enc)) return this.end(data, null, enc)
   this._ended = true
@@ -137,4 +137,4 @@ Writify.prototype.end = function (data, enc, cb) {
   stream.Writable.prototype.end.call(this, cb)
 }
 
-module.exports = Writify
+module.exports = Writsy
