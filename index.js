@@ -46,6 +46,8 @@ function Writsy (init, flush, opts) {
   this.destroyed = false
 
   var ready = (err, ws) => {
+    if (this._ws) throw new Error('multiple init callback')
+    if (!err && !ws) throw new Error('Stream not exists')
     this._ws = ws
     if (err) return this.destroy(err)
     if (this.destroyed) return destroy(this._ws)
@@ -63,7 +65,6 @@ function Writsy (init, flush, opts) {
   }
   this._corked = 1 // corked on init
   this._ondrain = null
-  this._drained = false
 
   if (isFn(init)) {
     var ws = init(ready)
@@ -107,7 +108,7 @@ Writsy.prototype.uncork = function () {
 
 Writsy.prototype._write = function (data, enc, cb) {
   if (this._corked) return onuncork(this, () => this._write(data, enc, cb))
-  if (!this._ws) return cb(new Error('Write stream not exists'))
+  if (!this._ws) return
   if (data === SIGNAL_FLUSH) return this._finish(cb)
 
   if (this._ws.write(data) === false) this._ondrain = cb
@@ -136,7 +137,7 @@ Writsy.prototype.end = function (data, enc, cb) {
   this._ended = true
   if (data) this.write(data)
   this.write(SIGNAL_FLUSH)
-  stream.Writable.prototype.end.call(this, cb)
+  return stream.Writable.prototype.end.call(this, cb)
 }
 
 module.exports = Writsy

@@ -7,7 +7,7 @@ var concat = require('concat-stream')
 var pump = require('pump')
 
 test('writsy wrap function, callback and stream', (t) => {
-  t.plan(7)
+  t.plan(6)
 
   pump(from(['a', 'b', 'c']), writsy(() => concat((buf) => {
     t.equal(buf.toString(), 'abc', 'wrap function')
@@ -22,8 +22,6 @@ test('writsy wrap function, callback and stream', (t) => {
   pump(from(['a', 'b', 'c']), writsy(concat((buf) => {
     t.equal(buf.toString(), 'abc', 'wrao stream')
   })), t.error)
-
-  t.throws(() => writsy(true), 'writer must be a stream or function')
 })
 
 test('writsy flush success', (t) => {
@@ -70,7 +68,7 @@ test('writsy flush error', (t) => {
 })
 
 test('wrifity init error', (t) => {
-  t.plan(2)
+  t.plan(5)
   var writer = writsy.obj((cb) => {
     process.nextTick(() => cb(new Error('init error')))
   }, (cb) => {
@@ -80,6 +78,13 @@ test('wrifity init error', (t) => {
     t.equal(err.message, 'init error')
     t.ok(writer.destroyed, 'stream destroyed')
   })
+
+  t.throws(() => writsy(true), 'init must be a stream or function')
+  t.throws(() => writsy((cb) => cb(), 'stream not exists'))
+  t.throws(() => writsy((cb) => {
+    cb(null, from(['a', 'b', 'c']))
+    cb(null, from(['d', 'e', 'f']))
+  }), 'multiple init callback')
 })
 
 test('cork write', (t) => {
