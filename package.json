@@ -1,6 +1,6 @@
 {
   "name": "writsy",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Write stream wrapper that supports async initialization and flush function",
   "scripts": {
     "test": "standard && node test.js"
