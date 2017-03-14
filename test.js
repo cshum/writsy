@@ -50,6 +50,32 @@ test('writsy flush success', (t) => {
   })
 })
 
+test('writsy flush extend success', (t) => {
+  t.plan(4)
+  var flushed = false
+  class Writer extends writsy {
+    _flush (cb) {
+      process.nextTick(() => {
+        flushed = true
+        cb()
+      })
+    }
+  }
+  var writer = new Writer((cb) => {
+    process.nextTick(() => {
+      cb(null, concat({encoding: 'objects'}, (arr) => {
+        t.notOk(flushed, 'not flushed on inner stream end')
+        t.deepEqual(arr, [1, 2, 3])
+      }))
+    })
+  }, { objectMode: true, highWaterMark: 16 })
+
+  pump(from.obj([1, 2, 3]), writer, (err) => {
+    t.error(err)
+    t.ok(flushed, 'flushed')
+  })
+})
+
 test('writsy flush error', (t) => {
   t.plan(3)
   var inner

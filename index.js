@@ -46,7 +46,6 @@ function Writsy (init, flush, opts) {
 
   this._corked = 1 // corked on init
   this._ondrain = null
-  this._flush = null
   if (isFn(flush)) this._flush = flush
   else if (flush && !opts) opts = flush
 
