@@ -58,6 +58,8 @@ class Writer extends Writsy {
   }
 
 }
+
+fs.createReadStream('loremipsum.txt').pipe(new Writer())
 ```
 
 ## License
