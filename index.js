@@ -46,6 +46,10 @@ function Writsy (init, flush, opts) {
 
   this._corked = 1 // corked on init
   this._ondrain = null
+
+  if (isFn(init) || isStream(init)) this._init = init
+  else if (!flush && !opts) opts = init
+
   if (isFn(flush)) this._flush = flush
   else if (flush && !opts) opts = flush
 
@@ -63,11 +67,11 @@ function Writsy (init, flush, opts) {
     this.uncork()
   }
 
-  if (isFn(init)) {
-    var ws = init(ready)
+  if (isFn(this._init)) {
+    var ws = this._init(ready)
     if (isStream(ws)) ready(null, ws)
-  } else if (isStream(init)) {
-    ready(null, init)
+  } else if (isStream(this._init)) {
+    ready(null, this._init)
   } else {
     throw new Error('init must be a stream or function')
   }

@@ -50,29 +50,32 @@ test('writsy flush success', (t) => {
   })
 })
 
-test('writsy flush extend success', (t) => {
+test('writsy class extend init flush success', (t) => {
   t.plan(4)
-  var flushed = false
   class Writer extends writsy {
+    constructor () {
+      super({ objectMode: true, highWaterMark: 16 })
+      this._flushed = false
+    }
+    _init (cb) {
+      process.nextTick(() => {
+        cb(null, concat({encoding: 'objects'}, (arr) => {
+          t.notOk(this._flushed, 'not flushed on inner stream end')
+          t.deepEqual(arr, [1, 2, 3])
+        }))
+      })
+    }
     _flush (cb) {
       process.nextTick(() => {
-        flushed = true
+        this._flushed = true
         cb()
       })
     }
   }
-  var writer = new Writer((cb) => {
-    process.nextTick(() => {
-      cb(null, concat({encoding: 'objects'}, (arr) => {
-        t.notOk(flushed, 'not flushed on inner stream end')
-        t.deepEqual(arr, [1, 2, 3])
-      }))
-    })
-  }, { objectMode: true, highWaterMark: 16 })
-
+  var writer = new Writer()
   pump(from.obj([1, 2, 3]), writer, (err) => {
     t.error(err)
-    t.ok(flushed, 'flushed')
+    t.ok(writer._flushed, 'flushed')
   })
 })
 
