@@ -7,10 +7,14 @@ var concat = require('concat-stream')
 var pump = require('pump')
 
 test('writsy wrap function, callback and stream', (t) => {
-  t.plan(6)
+  t.plan(8)
 
   pump(from(['a', 'b', 'c']), writsy(() => concat((buf) => {
     t.equal(buf.toString(), 'abc', 'wrap function')
+  })), t.error)
+
+  pump(from.obj(['a', 'b', 'c']), writsy.obj(() => concat((str) => {
+    t.deepEqual(str, 'abc', 'obj wrap function')
   })), t.error)
 
   pump(from(['a', 'b', 'c']), writsy((cb) => {
@@ -71,8 +75,6 @@ test('wrifity init error', (t) => {
   t.plan(5)
   var writer = writsy.obj((cb) => {
     process.nextTick(() => cb(new Error('init error')))
-  }, (cb) => {
-    t.fail('should not flush on init error')
   })
   pump(from.obj([1, 2, 3]), writer, (err) => {
     t.equal(err.message, 'init error')

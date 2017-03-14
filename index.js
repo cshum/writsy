@@ -42,8 +42,15 @@ var end = (ws, cb) => {
 
 function Writsy (init, flush, opts) {
   if (!(this instanceof Writsy)) return new Writsy(init, flush, opts)
-  stream.Writable.call(this, opts)
   this.destroyed = false
+
+  this._corked = 1 // corked on init
+  this._ondrain = null
+  this._flush = null
+  if (isFn(flush)) this._flush = flush
+  else if (flush && !opts) opts = flush
+
+  stream.Writable.call(this, opts)
 
   var ready = (err, ws) => {
     if (this._ws) throw new Error('multiple init callback')
@@ -56,15 +63,6 @@ function Writsy (init, flush, opts) {
     eos(this._ws, (err) => this.destroy(err))
     this.uncork()
   }
-
-  if (isFn(flush)) {
-    this._flush = flush
-  } else {
-    opts = flush
-    this._flush = null
-  }
-  this._corked = 1 // corked on init
-  this._ondrain = null
 
   if (isFn(init)) {
     var ws = init(ready)
