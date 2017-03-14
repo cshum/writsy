@@ -33,6 +33,33 @@ fs.createReadStream('loremipsum.txt').pipe(ws)
 
 ```
 
+Using class inheritance by setting `_init` and `_flush` methods:
+
+```js
+var Writsy = require('writsy')
+
+class Writer extends Writsy {
+
+  constructor (opts) {
+    super(opts)
+  }
+
+  _init (cb) {
+    // async initialization, error handling
+    mkdirp('/tmp/foo/', (err) => {
+      if (err) return cb(err)
+      cb(null, fs.createWriteStream('/tmp/foo/bar.txt'))
+    })
+  }
+
+  _flush (cb) {
+    // flush before finish
+    fs.rename('/tmp/foo/bar.txt', './dest.txt', cb)
+  }
+
+}
+```
+
 ## License
 
 MIT
