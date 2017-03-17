@@ -8,8 +8,8 @@ Write stream wrapper that supports async initialization and flush function.
 npm install writsy
 ```
 
-#### `var ws = writsy(init, [flush], [opts])`
-#### `var ws = writsy.obj(init, [flush], [opts])`
+#### `var ws = writsy([opts])`
+#### `var ws = writsy.obj([opts])`
 
 Wraps a new writable stream (or object stream) by passing `init` callback function.
 Supports optional `flush` function that is called before 'finish' emitted.
@@ -18,32 +18,32 @@ Supports optional `flush` function that is called before 'finish' emitted.
 var writsy = require('writsy')
 ...
 
-var ws = writsy((cb) => {
-  // async initialization, error handling
-  mkdirp('/tmp/foo/', (err) => {
-    if (err) return cb(err)
-    cb(null, fs.createWriteStream('/tmp/foo/bar.txt'))
-  })
-}, (cb) => {
-  // flush before finish
-  fs.rename('/tmp/foo/bar.txt', './dest.txt', cb)
+var ws = writsy({
+  init (cb) {
+    // async initialization, error handling
+    mkdirp('/tmp/foo/', (err) => {
+      if (err) return cb(err)
+      cb(null, fs.createWriteStream('/tmp/foo/bar.txt'))
+    })
+  },
+  flush (cb) {
+    // flush before finish
+    fs.rename('/tmp/foo/bar.txt', './dest.txt', cb)
+  }
 })
 
 fs.createReadStream('loremipsum.txt').pipe(ws)
-
 ```
 
-Using class inheritance by setting `_init` and `_flush` methods:
+Or class inheritance by setting `_init` and `_flush` methods:
 
 ```js
 var Writsy = require('writsy')
 
 class Writer extends Writsy {
-
   constructor (opts) {
     super(opts)
   }
-
   _init (cb) {
     // async initialization, error handling
     mkdirp('/tmp/foo/', (err) => {
@@ -51,12 +51,10 @@ class Writer extends Writsy {
       cb(null, fs.createWriteStream('/tmp/foo/bar.txt'))
     })
   }
-
   _flush (cb) {
     // flush before finish
     fs.rename('/tmp/foo/bar.txt', './dest.txt', cb)
   }
-
 }
 
 fs.createReadStream('loremipsum.txt').pipe(new Writer())

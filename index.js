@@ -53,6 +53,9 @@ function Writsy (init, flush, opts) {
   if (isFn(flush)) this._flush = flush
   else if (flush && !opts) opts = flush
 
+  if (opts && isFn(opts.init)) this._init = opts.init
+  if (opts && isFn(opts.flush)) this._flush = opts.flush
+
   stream.Writable.call(this, opts)
 
   var ready = (err, ws) => {
@@ -80,7 +83,9 @@ function Writsy (init, flush, opts) {
 util.inherits(Writsy, stream.Writable)
 
 Writsy.obj = function (init, flush, opts) {
-  if (!opts) opts = {}
+  if (flush && !isFn(flush)) opts = flush
+  else if (init && !isFn(init)) opts = init
+  else if (!opts) opts = {}
   opts.objectMode = true
   opts.highWaterMark = 16
   return new Writsy(init, flush, opts)
