@@ -51,15 +51,21 @@ test('writsy flush success', (t) => {
 })
 
 test('writsy simplified construction init flush success', (t) => {
-  t.plan(4)
+  t.plan(5)
+  var chunks = []
   var writer = writsy.obj({
     init (cb) {
       process.nextTick(() => {
         cb(null, concat({encoding: 'objects'}, (arr) => {
           t.notOk(this._flushed, 'not flushed on inner stream end')
           t.deepEqual(arr, [1, 2, 3])
+          t.deepEqual(chunks, [1, 2, 3])
         }))
       })
+    },
+    chunk (data) {
+      chunks.push(data)
+      return data
     },
     flush (cb) {
       process.nextTick(() => {
@@ -79,6 +85,7 @@ test('writsy class extend init flush success', (t) => {
     constructor () {
       super({ objectMode: true, highWaterMark: 16 })
       this._flushed = false
+      this._count = 0
     }
     _init (cb) {
       process.nextTick(() => {
@@ -87,6 +94,10 @@ test('writsy class extend init flush success', (t) => {
           t.deepEqual(arr, [1, 2, 3])
         }))
       })
+    }
+    _chunk (data) {
+      this._count++
+      return data
     }
     _flush (cb) {
       process.nextTick(() => {
@@ -157,13 +168,12 @@ test('cork write', (t) => {
 })
 
 test('cork preend prefinish flush', (t) => {
-  t.plan(4)
+  t.plan(3)
   var preend = false
   var prefinish = false
-  var flushed = false
   var ws = writsy((cb) => cb(null, concat()), (cb) => cb())
   pump(from(['a', 'b', 'c']), ws, (err) => {
-    t.ok(flushed, 'flushed')
+    t.ok(prefinish, 'prefinish')
     t.error(err)
   })
   ws.on('preend', () => {
@@ -180,9 +190,5 @@ test('cork preend prefinish flush', (t) => {
       prefinish = true
       ws.uncork()
     }, 100)
-  })
-  ws.on('flush', () => {
-    t.ok(prefinish, 'prefinish')
-    flushed = true
   })
 })

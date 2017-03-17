@@ -53,8 +53,11 @@ function Writsy (init, flush, opts) {
   if (isFn(flush)) this._flush = flush
   else if (flush && !opts) opts = flush
 
-  if (opts && isFn(opts.init)) this._init = opts.init
-  if (opts && isFn(opts.flush)) this._flush = opts.flush
+  if (opts) {
+    if (isFn(opts.init)) this._init = opts.init
+    if (isFn(opts.chunk)) this._chunk = opts.chunk
+    if (isFn(opts.flush)) this._flush = opts.flush
+  }
 
   stream.Writable.call(this, opts)
 
@@ -112,12 +115,16 @@ Writsy.prototype.uncork = function () {
   if (this._corked && --this._corked === 0) this.emit('uncork')
 }
 
+Writsy.prototype._chunk = function (data) {
+  return data
+}
+
 Writsy.prototype._write = function (data, enc, cb) {
   if (this._corked) return onuncork(this, () => this._write(data, enc, cb))
   if (!this._ws) return
   if (data === SIGNAL_FLUSH) return this._finish(cb)
 
-  if (this._ws.write(data) === false) this._ondrain = cb
+  if (this._ws.write(this._chunk(data)) === false) this._ondrain = cb
   else cb()
 }
 
@@ -130,7 +137,6 @@ Writsy.prototype._finish = function (cb) {
       this.emit('prefinish')
       onuncork(this, () => {
         if (!this._flush) return cb()
-        this.emit('flush')
         this._flush(cb)
       })
     })
