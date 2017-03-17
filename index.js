@@ -142,7 +142,7 @@ Writsy.prototype.end = function (data, enc, cb) {
   if (isFn(enc)) return this.end(data, null, enc)
   this._ended = true
   if (data) this.write(data)
-  this.write(SIGNAL_FLUSH)
+  if (!this._writableState.ending) this.write(SIGNAL_FLUSH)
   return stream.Writable.prototype.end.call(this, cb)
 }
 
