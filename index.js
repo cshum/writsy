@@ -3,7 +3,7 @@
 var eos = require('end-of-stream')
 var util = require('util')
 var fs = require('fs')
-var stream = require('stream')
+var stream = require('readable-stream')
 
 var SIGNAL_FLUSH = new Buffer([0])
 
